@@ -4,7 +4,7 @@ LSMemoはHTML5のWeb Storage（localStorage）機能を用いた簡易メモア�
 
 ファイル構成
 ------
-このライブラリは以下のファイル構成となっています。  
+このアプリは以下のファイル構成となっています。  
 * index.html  
 アプリ本体です。
 * README.md
