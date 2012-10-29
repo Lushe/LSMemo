@@ -1,0 +1,219 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ja">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<META name="viewport" content="width=320, initial-scale=1.0, user-scalable=yes, maximum-scale=2.0, minimum-scale=1.0, ">
+	<title>LSMemo</title>
+	
+	<script type="text/javascript">
+var keyPrefix = "LSMemo";
+function init(arg){
+	if(lsGet("DLLHead") === null){
+		reinit();
+	}
+	else if(arg == 1){
+		if(confirm("ローカルストレージを初期化するとこのアプリケーションが保存したすべてのデータがこのブラウザのローカルストレージから削除され、初回起動時の状態に戻ります。続行してもよろしいですか？")){
+			reinit();
+			dllShowList();
+		}
+		else{
+			alert("操作を取り消しました");
+		}
+	}
+	dllShowList();
+}
+function reinit(){
+	lsInit();
+	var head = dllCreateNode();
+	lsSet("DLLHead", head);
+	dllUpdateNode(head, new Array(head, head, "Head", "Head"));
+}
+function dllCreateNode(arg){
+	var node_array = new Array(null, null, "DefaultKey", "DefaultVal");
+	var nid = uniqueid();
+	if(arg !== undefined){
+		for(ii = 0; ii < node_array.length; ii++){
+			if(arg[ii] !== null){
+				node_array[ii] = arg[ii];
+			}
+		}
+	}
+	var node = "";
+	for(ii = 0; ii < node_array.length; ii++){
+		node += node_array[ii];
+		if(ii < node_array.length - 1) node += ",";
+	}
+	lsSet(nid, node);
+	return nid;
+}
+function dllRemove(nid){
+	var head_nid = lsGet("DLLHead");
+	var head = lsGet(head_nid).split(",");
+	var target = lsGet(nid).split(",");
+	if(target[0] === head_nid && target[1] === head_nid){
+		head[0] = head_nid;
+		head[1] = head_nid;
+		dllUpdateNode(head_nid, head);
+	}
+	else{
+		var prev_nid = target[0];
+		var prev = lsGet(prev_nid).split(",");
+		var next_nid = target[1];
+		var next = lsGet(next_nid).split(",");
+		prev[1] = next_nid;
+		next[0] = prev_nid;
+		dllUpdateNode(prev_nid, prev);
+		dllUpdateNode(next_nid, next);
+	}
+	lsDel(nid);
+	dllShowList();
+}
+function dllUpdateNode(nid, arg){
+	var target = lsGet(nid).split(",");
+	var node_array = new Array(null, null, null, null);
+	for(ii = 0; ii < target.length; ii++){
+		node_array[ii] = target[ii];
+	}
+	if(arg !== undefined){
+		for(ii = 0; ii < node_array.length; ii++){
+			if(arg[ii] !== null){
+				node_array[ii] = arg[ii];
+			}
+		}
+	}
+	var node = "";
+	for(ii = 0; ii < node_array.length; ii++){
+		node += node_array[ii];
+		if(ii < node_array.length - 1) node += ",";
+	}
+	lsSet(nid, node);
+}
+function dllAppendNode(arg){
+	var head_nid = lsGet("DLLHead");
+	var head = lsGet(head_nid).split(",");
+	var prev_nid = head[0];
+	var prev = lsGet(prev_nid).split(",");
+	var next_nid = head_nid;
+	var node = dllCreateNode(new Array(prev_nid, next_nid, arg[0], arg[1]));
+	if(head[1] !== head_nid){
+		prev[1] = node;
+		head[0] = node;
+		dllUpdateNode(prev_nid, prev);
+		dllUpdateNode(head_nid, head);
+	}
+	else{
+		head[0] = node;
+		head[1] = node;
+		dllUpdateNode(head_nid, head);
+	}
+}
+function dllAppendNodePrev(nid, arg){
+	var target = lsGet(nid).split(",");
+	var prev_nid = target[0];
+	var prev = lsGet(prev_nid).split(",");
+	var node = dllCreateNode(new Array(prev_nid, nid, arg[0], arg[1]));
+	prev[1] = node;
+	target[0] = node;
+	dllUpdateNode(prev_nid, prev);
+	dllUpdateNode(nid, target);
+}
+function dllAppendNodeNext(nid, arg){
+	var target = lsGet(nid).split(",");
+	var next_nid = target[1];
+	var next = lsGet(next_nid).split(",");
+	var node = dllCreateNode(new Array(nid, next_nid, arg[0], arg[1]));
+	next[0] = node;
+	target[1] = node;
+	dllUpdateNode(next_nid, next);
+	dllUpdateNode(nid, target);
+}
+function dllShow(){
+	var head_nid = lsGet("DLLHead");
+	var head = lsGet(head_nid).split(",");
+	var load_nid = head[1];
+	var load = lsGet(load_nid).split(",");
+	while(true){
+		if(load_nid === head_nid) break;
+		alert("load_nid="+load_nid+",head_nid="+head_nid+", key="+load[2]+", val="+load[3]);
+		load_nid = load[1];
+		load = lsGet(load_nid).split(",");
+	}
+}
+function dllRegister(){
+	var key = document.getElementById("key").value;
+	var val = document.getElementById("val").value;
+	dllAppendNode(new Array(key, val));
+	dllShowList();
+}
+function dllRegisterPrev(nid){
+	var key = document.getElementById("key").value;
+	var val = document.getElementById("val").value;
+	dllAppendNodePrev(nid, Array(key, val));
+	dllShowList();
+}
+function dllRegisterNext(nid){
+	var key = document.getElementById("key").value;
+	var val = document.getElementById("val").value;
+	dllAppendNodeNext(nid, Array(key, val));
+	dllShowList();
+}
+function dllShowList(){
+	var head_nid = lsGet("DLLHead");
+	var head = lsGet(head_nid).split(",");
+	var load_nid = head[1];
+	var load = lsGet(load_nid).split(",");
+	var render = "";
+	render += "<div style='width: 100%;'>"
+	render += "<table border='1' style='margin-left: auto; margin-right: auto;'><tr><td>キー</td><td>値</td><td>直前に追加</td><td>直後に追加</td><td>削除</td></tr>";
+	while(true){
+		if(load_nid === head_nid) break;
+		render += "<tr><td>"+load[2]+"</td><td>"+load[3]+'</td><td><a onclick="dllRegisterPrev('+"'"+load_nid+"'"+');">↑</a></td><td><a onclick="dllRegisterNext('+"'"+load_nid+"'"+');">↓</a></td><td><a onclick="dllRemove('+"'"+load_nid+"'"+');">×</a></td></tr>';
+		load_nid = load[1];
+		load = lsGet(load_nid).split(",");
+	}
+	render += "<tr><td colspan='5'><a href='#' onclick='dllRegister();'>要素を追加</a></td></tr>";
+	render += "</table>";
+	render += "</div><br>";
+	document.getElementById("list").innerHTML = render;
+}
+function lsGet(target){
+	return localStorage.getItem(keyPrefix+"."+target);
+}
+function lsSet(target, input){
+	localStorage.setItem(keyPrefix+"."+target, input);
+}
+function lsDel(target){
+	localStorage.removeItem(keyPrefix+"."+target);
+}
+function lsInit(){
+	for(var key in localStorage){
+		if(key.indexOf(keyPrefix+".", 0) > -1){
+			localStorage.removeItem(key);
+		}
+	}
+	var date = new Date();
+	lsSet("InitiatedTimestamp", date.getTime());
+	lsSet("DLLHead", null);
+}
+function uniqueid(){
+	var date = new Date();
+	return Math.floor(Math.random() * 10000) + date.getTime().toString();;
+}
+	</script>
+</head>
+
+<body>
+	<br>
+	<div style="width: 98%; margin-left: auto; margin-right: auto; text-align: center; font-size: 100%; border: solid;">
+		<br>
+		<div>
+			キー<input id="key" type="text"><br>
+			値<input id="val" type="text"><br>
+			<input id="initializeStorage" type="button" value="ローカルストレージを初期化" onclick="init(1); dllShowList();">
+		</div>
+		<br>
+		<div id="list"></div>
+	</div>
+	
+	<script type="text/javascript">init();</script>
+</body>
